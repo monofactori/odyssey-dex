@@ -388,9 +388,16 @@ void main() {
   vec4 dataColor = texture2D(uDataTexture, flipTexCoord);
   float dataValue = color2float(dataColor.rgb);
 
+  vec2 center = uScreenSize * 0.5;
+  float blackHoleStrength = 0.4;
+  float spiralSpeed = 1.8;
+  float minDistance = 56.0;
+  float rotationSpeed = 0.05;
+
   if(flipTexCoord.x < 0.5 && flipTexCoord.y < 0.5) {
     float seed = color2float(texture2D(uRandomSeedTexture, vTexCoord).rgb);
     vec4 dataPosX = texture2D(uDataTexture, flipTexCoord);
+    vec4 dataPosY = texture2D(uDataTexture, flipTexCoord + vec2(0.5, 0.0));
     vec4 dataVel = texture2D(uDataTexture, flipTexCoord + vec2(0.5, 0.5));
     vec4 dataRot = texture2D(uDataTexture, flipTexCoord + vec2(0.0, 0.5));
 
@@ -401,22 +408,41 @@ void main() {
     float life = color2float(dataParticleLife.rgb);
 
     float xPos = rawToReal(color2float(dataPosX.rgb));
+    float yPos = rawToReal(color2float(dataPosY.rgb));
     float vel = rawToReal(color2float(dataVel.rgb));
     float rot = rawToReal(color2float(dataRot.rgb));
 
     if(mod(uTime - lifeOffset, life) == 0.0) {
-      float circleAngle = random(vec2(uTime, seed)) * 360.0;
-      float shortSide = uScreenSize.x < uScreenSize.y ? uScreenSize.x : uScreenSize.y;
-      xPos = sin(circleAngle * DEG_TO_RAD) * shortSide * 0.56 + 0.5 * uScreenSize.x;
+      xPos = random(vec2(seed, uTime * 0.1)) * uScreenSize.x;
+    } else {
+      vec2 toCenter = center - vec2(xPos, yPos);
+      float dist = length(toCenter);
+      
+      if(dist > minDistance) {
+        vec2 direction = normalize(toCenter);
+        float gravity = blackHoleStrength * (1.0 / (dist * 0.01 + 1.0));
+        
+        float angle = atan(toCenter.y, toCenter.x);
+        float spiralAngle = angle + spiralSpeed * (1.0 / (dist * 0.01 + 1.0));
+        
+        vec2 spiralDir = vec2(cos(spiralAngle), sin(spiralAngle));
+        vec2 movement = mix(direction, spiralDir, 0.7) * gravity * vel * 0.08;
+        
+        xPos += movement.x;
+      } else {
+        float angle = atan(toCenter.y, toCenter.x);
+        float tangentAngle = angle + 1.5708;
+        vec2 tangent = vec2(cos(tangentAngle), sin(tangentAngle));
+        xPos += tangent.x * rotationSpeed * dist * 0.1;
+      }
     }
-    
-    xPos += sin(rot * DEG_TO_RAD) * vel * 0.003;
     
     vec3 resultColor = float2color(realToRaw(xPos));
     gl_FragColor = vec4(resultColor, 1.0);
   }
   else if(flipTexCoord.x >= 0.5 && flipTexCoord.y < 0.5) {
     float seed = color2float(texture2D(uRandomSeedTexture, vTexCoord + vec2(-0.5, 0.0)).rgb);
+    vec4 dataPosX = texture2D(uDataTexture, flipTexCoord + vec2(-0.5, 0.0));
     vec4 dataPosY = texture2D(uDataTexture, flipTexCoord);
     vec4 dataVel = texture2D(uDataTexture, flipTexCoord + vec2(0.0, 0.5));
     vec4 dataRot = texture2D(uDataTexture, flipTexCoord + vec2(-0.5, 0.5));
@@ -427,17 +453,35 @@ void main() {
     float lifeOffset = color2float(dataInitLife.rgb);
     float life = color2float(dataParticleLife.rgb);
 
+    float xPos = rawToReal(color2float(dataPosX.rgb));
     float yPos = rawToReal(color2float(dataPosY.rgb));
     float vel = rawToReal(color2float(dataVel.rgb));
     float rot = rawToReal(color2float(dataRot.rgb));
 
     if(mod(uTime - lifeOffset, life) == 0.0) {
-      float circleAngle = random(vec2(uTime, seed)) * 360.0;
-      float shortSide = uScreenSize.x < uScreenSize.y ? uScreenSize.x : uScreenSize.y;
-      yPos = cos(circleAngle * DEG_TO_RAD) * shortSide * 0.56 + 0.5 * uScreenSize.y;
+      yPos = random(vec2(seed * 1.5, uTime * 0.15)) * uScreenSize.y;
+    } else {
+      vec2 toCenter = center - vec2(xPos, yPos);
+      float dist = length(toCenter);
+      
+      if(dist > minDistance) {
+        vec2 direction = normalize(toCenter);
+        float gravity = blackHoleStrength * (1.0 / (dist * 0.01 + 1.0));
+        
+        float angle = atan(toCenter.y, toCenter.x);
+        float spiralAngle = angle + spiralSpeed * (1.0 / (dist * 0.01 + 1.0));
+        
+        vec2 spiralDir = vec2(cos(spiralAngle), sin(spiralAngle));
+        vec2 movement = mix(direction, spiralDir, 0.7) * gravity * vel * 0.08;
+        
+        yPos += movement.y;
+      } else {
+        float angle = atan(toCenter.y, toCenter.x);
+        float tangentAngle = angle + 1.5708;
+        vec2 tangent = vec2(cos(tangentAngle), sin(tangentAngle));
+        yPos += tangent.y * rotationSpeed * dist * 0.1;
+      }
     }
-    
-    yPos += cos(rot * DEG_TO_RAD) * vel * 0.003;
     
     vec3 resultColor = float2color(realToRaw(yPos));
     gl_FragColor = vec4(resultColor, 1.0);
@@ -451,7 +495,10 @@ void main() {
     float posY = rawToReal(color2float(dataPosY.rgb));
     float rot = rawToReal(color2float(dataRot.rgb));
 
-    rot = mix(rot, snoise(vec3(posX * 0.001, posY * 0.001, uTime * 0.001)) * 360., 0.01);
+    vec2 toCenter = center - vec2(posX, posY);
+    float angle = atan(toCenter.y, toCenter.x) * 180.0 / 3.14159;
+    
+    rot = mix(rot, angle, 0.05);
 
     vec3 resultColor = float2color(realToRaw(rot));
     gl_FragColor = vec4(resultColor, 1.0);
@@ -467,9 +514,12 @@ void main() {
     float vel = rawToReal(color2float(dataVel.rgb));
     float rot = rawToReal(color2float(dataRot.rgb));
 
-    float noiseVel = snoise(vec3(posX, posY, uTime)) * 0.5 + 0.5;
-    vel += noiseVel;
-    vel *= 0.9;
+    vec2 toCenter = center - vec2(posX, posY);
+    float dist = length(toCenter);
+    
+    float acceleration = 1.0 + (1.0 / (dist * 0.005 + 1.0)) * 2.0;
+    vel *= 0.98;
+    vel += acceleration * 0.1;
 
     float storeValue = realToRaw(vel);
     vec3 resultColor = float2color(storeValue);
@@ -616,13 +666,24 @@ void main () {
     float lifeOffset = color2float(dataLifeOffset.rgb);
     float life = color2float(dataLife.rgb);
     float alpha = 1.0 - mod(uTime - lifeOffset, life) / life;
-    vAlpha = clamp(alpha - 0.05, 0.0, 1.0);
 
     float posXValue = rawToReal(color2float(posXColor.rgb));
     float posYValue = rawToReal(color2float(posYColor.rgb));
     float rotValue = rawToReal(color2float(rotColor.rgb));
 
+    vec2 center = uScreenSize * 0.5;
+    vec2 particlePos = vec2(posXValue, posYValue);
+    float distToCenter = length(particlePos - center);
+    float maxDist = length(uScreenSize) * 0.5;
+    
+    float fadeByDistance = smoothstep(0.0, 56.0, distToCenter);
+    vAlpha = clamp(alpha * fadeByDistance - 0.05, 0.0, 1.0);
+
     vec2 vertexPos = rotate(aPosition.xy, -rotValue * DEG_TO_RAD);
+    
+    float sizeScale = mix(0.1, 1.0, distToCenter / maxDist);
+    vertexPos *= sizeScale;
+    
     vertexPos.x += posXValue - 0.5 * uScreenSize.x;
     vertexPos.y += posYValue - 0.5 * uScreenSize.y;
     
