@@ -12,8 +12,8 @@ export function Header({ class: className }: HeaderProps) {
         className,
       )}
     >
-      <div class="container mx-auto px-4 h-16 flex items-center justify-center">
-        <nav class="flex items-center gap-10">
+      <div class="container mx-auto px-4 h-16 flex items-center justify-center gap-8">
+        <nav class="flex items-center gap-2">
           <a
             href="/trade"
             class="text-lg font-medium text-foreground/80 hover:text-foreground transition-colors"
@@ -26,6 +26,13 @@ export function Header({ class: className }: HeaderProps) {
           >
             Spaceship
           </a>
+        </nav>
+        
+        <a href="/">
+          <img src="/odyssey.svg" alt="Odyssey" class="h-10 w-auto brightness-0 invert" />
+        </a>
+        
+        <nav class="flex items-center gap-2">
           <a
             href="/whitepaper"
             class="text-lg font-medium text-foreground/80 hover:text-foreground transition-colors"
