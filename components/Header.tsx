@@ -29,7 +29,7 @@ export function Header({ class: className }: HeaderProps) {
         </nav>
         
         <a href="/">
-          <img src="/odyssey.svg" alt="Odyssey" class="h-10 w-auto brightness-0 invert" />
+          <img src="/odyssey-logo.svg" alt="Odyssey" class="h-16 w-auto brightness-0 invert opacity-80 hover:opacity-100 transition-opacity" />
         </a>
         
         <nav class="flex items-center gap-2">
