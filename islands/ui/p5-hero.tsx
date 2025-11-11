@@ -391,8 +391,8 @@ void main() {
   vec2 center = uScreenSize * 0.5;
   float blackHoleStrength = 0.4;
   float spiralSpeed = 1.8;
-  float minDistance = 56.0;
-  float rotationSpeed = 0.05;
+  float minDistance = 50.0;
+  float rotationSpeed = 0.01;
 
   if(flipTexCoord.x < 0.5 && flipTexCoord.y < 0.5) {
     float seed = color2float(texture2D(uRandomSeedTexture, vTexCoord).rgb);
@@ -433,7 +433,9 @@ void main() {
         float angle = atan(toCenter.y, toCenter.x);
         float tangentAngle = angle + 1.5708;
         vec2 tangent = vec2(cos(tangentAngle), sin(tangentAngle));
-        xPos += tangent.x * rotationSpeed * dist * 0.1;
+        float randomOffset = (random(vec2(seed, uTime * 0.01)) - 0.5) * 8.0;
+        float radialNoise = (random(vec2(seed * 2.0, uTime * 0.02)) - 0.5) * 0.3;
+        xPos += tangent.x * rotationSpeed * dist * 0.1 + randomOffset + toCenter.x * radialNoise;
       }
     }
     
@@ -479,7 +481,9 @@ void main() {
         float angle = atan(toCenter.y, toCenter.x);
         float tangentAngle = angle + 1.5708;
         vec2 tangent = vec2(cos(tangentAngle), sin(tangentAngle));
-        yPos += tangent.y * rotationSpeed * dist * 0.1;
+        float randomOffset = (random(vec2(seed * 1.3, uTime * 0.012)) - 0.5) * 8.0;
+        float radialNoise = (random(vec2(seed * 2.5, uTime * 0.022)) - 0.5) * 0.3;
+        yPos += tangent.y * rotationSpeed * dist * 0.1 + randomOffset + toCenter.y * radialNoise;
       }
     }
     
@@ -676,7 +680,7 @@ void main () {
     float distToCenter = length(particlePos - center);
     float maxDist = length(uScreenSize) * 0.5;
     
-    float fadeByDistance = smoothstep(0.0, 56.0, distToCenter);
+    float fadeByDistance = smoothstep(0.0, 50.0, distToCenter);
     vAlpha = clamp(alpha * fadeByDistance - 0.05, 0.0, 1.0);
 
     vec2 vertexPos = rotate(aPosition.xy, -rotValue * DEG_TO_RAD);
