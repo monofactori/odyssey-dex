@@ -392,7 +392,7 @@ void main() {
   float blackHoleStrength = 0.4;
   float spiralSpeed = 1.8;
   float minDistance = 50.0;
-  float rotationSpeed = 0.01;
+  float rotationSpeed = 0.002;
 
   if(flipTexCoord.x < 0.5 && flipTexCoord.y < 0.5) {
     float seed = color2float(texture2D(uRandomSeedTexture, vTexCoord).rgb);
@@ -433,9 +433,9 @@ void main() {
         float angle = atan(toCenter.y, toCenter.x);
         float tangentAngle = angle + 1.5708;
         vec2 tangent = vec2(cos(tangentAngle), sin(tangentAngle));
-        float randomOffset = (random(vec2(seed, uTime * 0.01)) - 0.5) * 8.0;
-        float radialNoise = (random(vec2(seed * 2.0, uTime * 0.02)) - 0.5) * 0.3;
-        xPos += tangent.x * rotationSpeed * dist * 0.1 + randomOffset + toCenter.x * radialNoise;
+        float randomOffset = (random(vec2(seed, uTime * 0.01)) - 0.5) * 2.0;
+        float radialNoise = (random(vec2(seed * 2.0, uTime * 0.02)) - 0.5) * 0.15;
+        xPos += tangent.x * rotationSpeed + randomOffset + toCenter.x * radialNoise;
       }
     }
     
@@ -481,9 +481,9 @@ void main() {
         float angle = atan(toCenter.y, toCenter.x);
         float tangentAngle = angle + 1.5708;
         vec2 tangent = vec2(cos(tangentAngle), sin(tangentAngle));
-        float randomOffset = (random(vec2(seed * 1.3, uTime * 0.012)) - 0.5) * 8.0;
-        float radialNoise = (random(vec2(seed * 2.5, uTime * 0.022)) - 0.5) * 0.3;
-        yPos += tangent.y * rotationSpeed * dist * 0.1 + randomOffset + toCenter.y * radialNoise;
+        float randomOffset = (random(vec2(seed * 1.3, uTime * 0.012)) - 0.5) * 2.0;
+        float radialNoise = (random(vec2(seed * 2.5, uTime * 0.022)) - 0.5) * 0.15;
+        yPos += tangent.y * rotationSpeed + randomOffset + toCenter.y * radialNoise;
       }
     }
     
@@ -521,9 +521,14 @@ void main() {
     vec2 toCenter = center - vec2(posX, posY);
     float dist = length(toCenter);
     
-    float acceleration = 1.0 + (1.0 / (dist * 0.005 + 1.0)) * 2.0;
-    vel *= 0.98;
-    vel += acceleration * 0.1;
+    if(dist > 50.0) {
+      float acceleration = 1.0 + (1.0 / (dist * 0.005 + 1.0)) * 2.0;
+      vel *= 0.98;
+      vel += acceleration * 0.1;
+    } else {
+      vel *= 0.85;
+      vel = max(vel, 5.0);
+    }
 
     float storeValue = realToRaw(vel);
     vec3 resultColor = float2color(storeValue);
